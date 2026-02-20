@@ -124,7 +124,7 @@ function App() {
           />
           <FaceRecognition imageUrl={imageUrl} box={box} />
         </div>
-      ) : route === 'signin' ? (
+      ) : route === 'signin' || route === 'signout' ? (
         <Signin onRouteChange={onRouteChange} />
       ) : (
         <Register onRouteChange={onRouteChange} />
