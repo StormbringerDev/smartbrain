@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import ParticlesBg from 'particles-bg';
 import Navigation from './components/Navigation/Navigation';
 import Logo from './components/Logo/Logo';
@@ -47,24 +47,26 @@ const clarifaiRequestOptions = (imageUrl) => {
   return requestOptions;
 };
 
-class App extends Component {
-  constructor() {
-    super();
-    this.state = {
-      input: '',
-      imageUrl: '',
-      box: {},
-      route: 'signin',
-      isSignedIn: false,
-    };
-  }
+function App() {
+  const [input, setInput] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [box, setBox] = useState({});
+  const [route, setRoute] = useState('signin');
+  const [isSignedIn, setIsSignedIn] = useState(false);
 
-  calculateFaceLocation = (data) => {
+  const calculateFaceLocation = (data) => {
     const clarifaiFace =
       data.outputs[0].data.regions[0].region_info.bounding_box;
     const image = document.getElementById('inputImage');
+
+    if (!image) {
+      console.warn('Image element not found');
+      return { leftCol: 0, topRow: 0, rightCol: 0, bottomRow: 0 };
+    }
+
     const width = Number(image.width);
     const height = Number(image.height);
+
     return {
       leftCol: clarifaiFace.left_col * width,
       topRow: clarifaiFace.top_row * height,
@@ -73,62 +75,62 @@ class App extends Component {
     };
   };
 
-  displayFaceBox = (box) => {
-    this.setState({ box: box });
+  const displayFaceBox = (boxData) => {
+    setBox(boxData);
   };
 
-  onInputChange = (event) => {
-    this.setState({ input: event.target.value });
+  const onInputChange = (event) => {
+    setInput(event.target.value);
   };
 
-  onButtonSubmit = () => {
-    this.setState({ imageUrl: this.state.input });
+  const onButtonSubmit = () => {
+    setImageUrl(input);
     fetch(
       'https://api.clarifai.com/v2/models/face-detection/outputs',
-      clarifaiRequestOptions(this.state.input),
+      clarifaiRequestOptions(input),
     )
-      .then((response) =>
-        this.displayFaceBox(this.calculateFaceLocation(response)),
-      )
+      .then((response) => response.json())
+      .then((result) => {
+        if (result?.outputs?.[0]?.data?.regions?.[0]) {
+          const boxLocation = calculateFaceLocation(result);
+          displayFaceBox(boxLocation);
+        } else {
+          console.log('No face detected or invalid response');
+        }
+      })
       .catch((err) => console.log(err));
   };
 
-  onRouteChange = (route) => {
-    if (route === 'signout') {
-      this.setState({ isSignedIn: false });
-    } else if (route === 'home') {
-      this.setState({ isSignedIn: true });
+  const onRouteChange = (newRoute) => {
+    if (newRoute === 'signout') {
+      setIsSignedIn(false);
+    } else if (newRoute === 'home') {
+      setIsSignedIn(true);
     }
-    this.setState({ route: route });
+    setRoute(newRoute);
   };
 
-  render() {
-    const { isSignedIn, imageUrl, route, box } = this.state;
-    return (
-      <div className="App">
-        <ParticlesBg type="cobweb" bg={true} />
-        <Navigation
-          isSignedIn={isSignedIn}
-          onRouteChange={this.onRouteChange}
-        />
-        {route === 'home' ? (
-          <div>
-            <Logo />
-            <Rank />
-            <ImageLinkForm
-              onInputChange={this.onInputChange}
-              onButtonSubmit={this.onButtonSubmit}
-            />
-            <FaceRecognition imageUrl={imageUrl} box={box} />
-          </div>
-        ) : route === 'signin' ? (
-          <Signin onRouteChange={this.onRouteChange} />
-        ) : (
-          <Register onRouteChange={this.onRouteChange} />
-        )}
-      </div>
-    );
-  }
+  return (
+    <div className="App">
+      <ParticlesBg type="cobweb" bg={true} />
+      <Navigation isSignedIn={isSignedIn} onRouteChange={onRouteChange} />
+      {route === 'home' ? (
+        <div>
+          <Logo />
+          <Rank />
+          <ImageLinkForm
+            onInputChange={onInputChange}
+            onButtonSubmit={onButtonSubmit}
+          />
+          <FaceRecognition imageUrl={imageUrl} box={box} />
+        </div>
+      ) : route === 'signin' ? (
+        <Signin onRouteChange={onRouteChange} />
+      ) : (
+        <Register onRouteChange={onRouteChange} />
+      )}
+    </div>
+  );
 }
 
 export default App;
