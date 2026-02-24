@@ -55,6 +55,23 @@ function App() {
   const [box, setBox] = useState({});
   const [route, setRoute] = useState('signin');
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [user, setUser] = useState({
+    id: '',
+    name: '',
+    email: '',
+    entries: 0,
+    joined: '',
+  });
+
+  const loadUser = (data) => {
+    setUser({
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      entries: data.entries,
+      joined: data.joined,
+    });
+  };
 
   const calculateFaceLocation = (data) => {
     const clarifaiFace =
@@ -85,7 +102,7 @@ function App() {
     setInput(event.target.value);
   };
 
-  const onButtonSubmit = () => {
+  const onPictureSubmit = () => {
     setImageUrl(input);
     fetch(
       `https://api.clarifai.com/v2/models/${MODEL_ID}/outputs`,
@@ -93,12 +110,20 @@ function App() {
     )
       .then((response) => response.json())
       .then((result) => {
-        if (result?.outputs?.[0]?.data?.regions?.[0]) {
-          const boxLocation = calculateFaceLocation(result);
-          displayFaceBox(boxLocation);
-        } else {
-          console.log('No face detected or invalid response');
+        if (result) {
+          fetch('http://localhost:3000/image', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: user.id,
+            }),
+          })
+            .then((response) => response.json())
+            .then((count) => {
+              Object.assign(user, { entries: count });
+            });
         }
+        displayFaceBox(calculateFaceLocation(result));
       })
       .catch((err) => console.log(err));
   };
@@ -119,17 +144,17 @@ function App() {
       {route === 'home' ? (
         <div>
           <Logo />
-          <Rank />
+          <Rank name={user.name} entries={user.entries} />
           <ImageLinkForm
             onInputChange={onInputChange}
-            onButtonSubmit={onButtonSubmit}
+            onPictureSubmit={onPictureSubmit}
           />
           <FaceRecognition imageUrl={imageUrl} box={box} />
         </div>
       ) : route === 'signin' || route === 'signout' ? (
-        <Signin onRouteChange={onRouteChange} />
+        <Signin onRouteChange={onRouteChange} loadUser={loadUser} />
       ) : (
-        <Register onRouteChange={onRouteChange} />
+        <Register onRouteChange={onRouteChange} loadUser={loadUser} />
       )}
     </div>
   );
