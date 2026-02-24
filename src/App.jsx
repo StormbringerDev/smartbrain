@@ -9,6 +9,8 @@ import Signin from './components/Signin/Signin';
 import Register from './components/Register/Register';
 import './App.css';
 
+const MODEL_ID = 'face-detection';
+
 const clarifaiRequestOptions = (imageUrl) => {
   // Your PAT (Personal Access Token) can be found in the Account's Security section
   const PAT = 'fc33095056bb4cf0a7c027ca2f2c5188';
@@ -86,7 +88,7 @@ function App() {
   const onButtonSubmit = () => {
     setImageUrl(input);
     fetch(
-      'https://api.clarifai.com/v2/models/face-detection/outputs',
+      `https://api.clarifai.com/v2/models/${MODEL_ID}/outputs`,
       clarifaiRequestOptions(input),
     )
       .then((response) => response.json())
