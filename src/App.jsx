@@ -74,8 +74,7 @@ function App() {
   };
 
   const calculateFaceLocation = (data) => {
-    const clarifaiFace =
-      data.outputs[0].data.regions[0].region_info.bounding_box;
+    const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
     const image = document.getElementById('inputImage');
 
     if (!image) {
@@ -104,10 +103,7 @@ function App() {
 
   const onPictureSubmit = () => {
     setImageUrl(input);
-    fetch(
-      `https://api.clarifai.com/v2/models/${MODEL_ID}/outputs`,
-      clarifaiRequestOptions(input),
-    )
+    fetch(`https://api.clarifai.com/v2/models/${MODEL_ID}/outputs`, clarifaiRequestOptions(input))
       .then((response) => response.json())
       .then((result) => {
         if (result) {
@@ -121,7 +117,8 @@ function App() {
             .then((response) => response.json())
             .then((count) => {
               Object.assign(user, { entries: count });
-            });
+            })
+            .catch(console.log);
         }
         displayFaceBox(calculateFaceLocation(result));
       })
@@ -130,7 +127,17 @@ function App() {
 
   const onRouteChange = (newRoute) => {
     if (newRoute === 'signout') {
+      setInput('');
+      setImageUrl('');
+      setBox({});
       setIsSignedIn(false);
+      setUser({
+        id: '',
+        name: '',
+        email: '',
+        entries: 0,
+        joined: '',
+      });
     } else if (newRoute === 'home') {
       setIsSignedIn(true);
     }
@@ -145,10 +152,7 @@ function App() {
         <div>
           <Logo />
           <Rank name={user.name} entries={user.entries} />
-          <ImageLinkForm
-            onInputChange={onInputChange}
-            onPictureSubmit={onPictureSubmit}
-          />
+          <ImageLinkForm onInputChange={onInputChange} onPictureSubmit={onPictureSubmit} />
           <FaceRecognition imageUrl={imageUrl} box={box} />
         </div>
       ) : route === 'signin' || route === 'signout' ? (
